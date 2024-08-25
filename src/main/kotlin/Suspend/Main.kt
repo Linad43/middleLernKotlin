@@ -14,26 +14,33 @@ suspend fun main() = coroutineScope {
         Person("four", 19)
     )
     val weathers = listOf(
-        Weather((1..100).random(), (1..100).random(), (1..100).random()),
-        Weather((1..100).random(), (1..100).random(), (1..100).random()),
-        Weather((1..100).random(), (1..100).random(), (1..100).random()),
-        Weather((1..100).random(), (1..100).random(), (1..100).random()),
-        Weather((1..100).random(), (1..100).random(), (1..100).random()),
-        Weather((1..100).random(), (1..100).random(), (1..100).random()),
-        Weather((1..100).random(), (1..100).random(), (1..100).random()),
-        Weather((1..100).random(), (1..100).random(), (1..100).random()),
-        Weather((1..100).random(), (1..100).random(), (1..100).random()),
-        Weather((1..100).random(), (1..100).random(), (1..100).random()),
-        Weather((1..100).random(), (1..100).random(), (1..100).random()),
-        Weather((1..100).random(), (1..100).random(), (1..100).random())
+        Weather("oneCity", (1..10).random(), ((1..10000).random()) / 10.0),
+        Weather("twoCity", (1..10).random(), ((1..10000).random()) / 10.0),
+        Weather("treeCity", (1..10).random(), ((1..10000).random()) / 10.0),
+        Weather("fourCity", (1..10).random(), ((1..10000).random()) / 10.0)
+    )
+    val randoms = listOf(
+        (1..1000).random(),
+        (1..1000).random(),
+        (1..1000).random(),
+        (1..1000).random(),
+        (1..1000).random(),
+        (1..1000).random(),
+        (1..1000).random(),
+        (1..1000).random(),
+        (1..1000).random(),
+        (1..1000).random()
     )
     val tasks = listOf(
-    launch{
-        initList(persons)
-    },
-    launch{
-        initList(weathers)
-    })
+        launch {
+            initList(persons)
+        },
+        launch {
+            initList(weathers)
+        },
+        launch {
+            initList(randoms)
+        })
     tasks.joinAll()
     println("Программа завершена")
 }
@@ -48,17 +55,17 @@ class Person(
 }
 
 class Weather(
-    val city: Int,
+    val city: String,
     val description: Int,
-    val temp: Int
-){
+    val temp: Double
+) {
     override fun toString(): String {
         return "city = $city, description = $description, temp = $temp"
     }
 }
 
-suspend fun <T> initList(list:List<T>):List<T>{
-    for(element in list){
+suspend fun <T> initList(list: List<T>): List<T> {
+    for (element in list) {
         delay(1000L)
         println("downloading: $element")
     }
