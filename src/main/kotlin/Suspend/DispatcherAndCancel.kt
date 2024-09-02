@@ -49,28 +49,35 @@ suspend fun main(): Unit = coroutineScope {
     //Вот тут не могу понять как закрыть корутину по вводу нуля
     if (!flagFirst) {//проверка что бы список не был пустым
         val job = launch(Dispatchers.Default) {//Запуск добавления пароля и чтения данных
+            println("launch job")
             manager.addPassword()
             manager.readDataPersonList()
-            this.cancel()//данным образом можно закрыть корутину?
         }
         val cancelJob = launch(Dispatchers.Default) {//это по сути слушатель нажатия
-            var buf:String
-            while (true) {
+            println("launch cancelJob")
+            var buf: String
+            while (job.isActive) {
                 buf = readln()
-                if (buf = "0") {//в условии выдает ошибку
-                    job.cancel()//можно так закрыть другую корутину?
+                if (buf == "0") {
+                    job.cancel()
+                    println("job cancel")
+                    break
                 }
             }
+            println("cancelJob cancel")
         }
-        val checkJob = launch(Dispatchers.Default) {//эта создана для закрытия слушателя если ничего не нажато и чтение данных закончено
-            while (job.isActive) {
-
-            }
-            cancelJob.cancel()
-            cancelJob.join()//что делает эта команда?
-            this.cancel()
-        }
-        joinAll(job, cancelJob, checkJob)
+        /*val checkJob =
+            launch(Dispatchers.Default) {//эта создана для закрытия слушателя если ничего не нажато и чтение данных закончено
+                println("launch checkJob")
+                job.join()
+                println("==job cancel==")
+                cancelJob.cancel()
+                println("==cancelJob cancel==")
+                //this.cancel()
+            }*/
+        //joinAll(job, cancelJob, checkJob)
+        joinAll(job, cancelJob)
+        println("cancelAll")
     }
 
     println("Завершение полной работы")
