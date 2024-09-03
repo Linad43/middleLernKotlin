@@ -1,10 +1,10 @@
 package Suspend
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.*
 import java.io.BufferedReader
 import java.io.File
+import kotlin.time.measureTime
 
 suspend fun main(): Unit = coroutineScope {
     val bufferedReader: BufferedReader = File("Мартышка и очки.txt").bufferedReader()
@@ -12,26 +12,44 @@ suspend fun main(): Unit = coroutineScope {
     val text = Strogate(inputString)
 
     val listResult = mutableListOf<String>()
-    val channelLine = Channel<String>()
-    val channelSend = launch {
-        getList(text.text, channelLine)
-    }
-    var stringResult = ""
-    val channelGet = launch {
-        //println(channelLine.receive())
-        for (line in channelLine) {
-            //println(line)
-            //stringResult+=line
-            listResult.add(line)
+    val time = measureTime {
+        coroutineScope {
+            val channelSend = getList(text.text)
+            var stringResult = ""
+            val channelGet = launch {
+                //var stringResult = ""
+                //println(channelLine.receive())
+                for (line in channelSend) {
+                    //println("line: $line")
+                    //println(line)
+                    //stringResult+=channelLine.receive()
+                    stringResult += line
+                    listResult.add(line)
+                    //println("listResult:$stringResult")
+                }
+                /*channelSend.consumeEach {
+                    //println("$it")
+                    stringResult+=it
+                    listResult.add(it)
+                }*/
+            }
+            val channelMod = modifiedList(channelSend)
+            joinAll(channelGet)
+            //пробовал по разному, но в переменную записывается только последняя строка
+            println("listResult:\n${listResult}")
+            println("stringResult:\n$stringResult")
+
+            channelMod.consumeEach {
+                println("Полученные данные: $it")
+            }//Эта вообще не работает, не понятно почему
         }
     }
-
-    joinAll(channelSend, channelGet)
-    println(listResult)
-    for (line in listResult) {
+    println("Затраченное время $time мс")
+    /*for (line in listResult) {
         stringResult += line
-    }
-    println(stringResult)//Выводит только последнюю строку, не ясна причина
+    }*/
+    //println(stringResult)//Выводит только последнюю строку, не ясна причина
+
     /*launch {
         for (line in text.text.split("\n")) {
             delay(10L)
@@ -52,15 +70,29 @@ class Strogate(val text: String) {
 
 }
 
-suspend fun getList(text: String, channel: SendChannel<String>): Job = coroutineScope {
-    //val result = Channel<String>()
-    val lines = text.split("\n")
-    launch {
-        for (line in lines) {
-            delay(10L)
-            //println(line)
-            channel.send(line)
-        }
-        channel.close()
+suspend fun CoroutineScope.modifiedList(channel: ReceiveChannel<String>): ReceiveChannel<String> = produce {
+    channel.consumeEach {
+        it.first().toString().uppercase()
     }
 }
+
+suspend fun CoroutineScope.getList(text: String): ReceiveChannel<String> = produce {
+    val lines = text.split("\n")
+    for (line in lines) {
+        delay(10L)
+        //println(line)
+        send(line/*.replace("\n", "")*/)
+    }
+    close()
+}
+
+/*suspend fun CoroutineScope.getStringList(channel: ReceiveChannel<String>): ReceiveChannel<String> = produce {
+    for (line in channel) {
+        //println("line: $line")
+        //println(line)
+        //stringResult+=channelLine.receive()
+        stringResult += line
+        listResult.add(line)
+        println("listResult:$stringResult")
+    }
+}*/
